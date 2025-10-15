@@ -26,11 +26,26 @@
       }
 
       let cashback = monto * PERCENT;
-      if (cashback > MAX_CASHBACK) cashback = MAX_CASHBACK;
-      if (cashback < MIN_CASHBACK) cashback = MIN_CASHBACK;
+      let mensaje = "";
+
+      if (cashback >= MAX_CASHBACK) {
+        cashback = MAX_CASHBACK;
+        mensaje = `🎉 ¡Has alcanzado el límite máximo de cashback! 
+El monto que ingresaste fue: ${monto} BDT
+Porcentaje aplicado: ${PERCENT*100}%
+Total de cashback: ${cashback.toFixed(2)} BDT`;
+      } else if (cashback < MIN_CASHBACK) {
+        cashback = MIN_CASHBACK;
+        mensaje = `⚠️ El cashback calculado es menor al mínimo permitido.
+Tu cashback será: ${cashback.toFixed(2)} BDT`;
+      } else {
+        mensaje = `El monto que ingresaste fue: ${monto} BDT
+Porcentaje aplicado: ${PERCENT*100}%
+Total de cashback: ${cashback.toFixed(2)} BDT`;
+      }
 
       const chatDiv = document.getElementById("chat");
-      chatDiv.innerHTML += `<p><b>Calculadora:</b> Tu cashback es ${cashback.toFixed(2)} BDT</p>`;
+      chatDiv.innerHTML += `<p><b>Calculadora:</b> ${mensaje.replace(/\n/g,"<br>")}</p>`;
     }
 
     async function enviarMensaje() {
