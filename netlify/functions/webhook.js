@@ -1,20 +1,30 @@
 export async function handler(event) {
   try {
-    const body = event.body ? JSON.parse(event.body) : {};
-    const message = body.message?.toLowerCase() || "sin mensaje";
+    // 1️⃣ Intentar leer mensaje desde POST
+    let message = "";
+    if (event.body) {
+      const body = JSON.parse(event.body);
+      message = body.message || "";
+    }
+
+    // 2️⃣ Si no hay mensaje en POST, buscar en query string (GET)
+    if (!message && event.queryStringParameters) {
+      message = event.queryStringParameters.message || "";
+    }
+
+    const text = message.toLowerCase() || "sin mensaje";
 
     let reply = "No entiendo tu mensaje aún.";
 
     // --- Ejemplos simples ---
-    if (message.includes("hola")) {
+    if (text.includes("hola")) {
       reply = "👋 ¡Hola! ¿Cómo estás?";
-    } else if (message.includes("adiós")) {
+    } else if (text.includes("adiós")) {
       reply = "👋 ¡Hasta luego!";
-    } else if (message.match(/\d+\s*\+\s*\d+/)) {
-      // Detecta operaciones simples tipo "2 + 3"
-      const result = eval(message);
+    } else if (text.match(/\d+\s*\+\s*\d+/)) {
+      const result = eval(text);
       reply = `El resultado es ${result}`;
-    } else if (message.includes("hora")) {
+    } else if (text.includes("hora")) {
       reply = `🕒 La hora actual es: ${new Date().toLocaleTimeString()}`;
     }
 
