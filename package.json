@@ -1,5 +1,8 @@
 {
   "name": "tidiotech-backend",
   "version": "1.0.0",
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "mathjs": "^11.8.0"
+  }
 }
