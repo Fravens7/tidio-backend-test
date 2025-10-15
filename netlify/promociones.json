@@ -1,0 +1,13 @@
+{
+  "chicken_dash": {
+    "porcentaje": 0.10,
+    "maximo": 5000,
+    "minimo": 10
+  },
+  "slots": [
+    {"min": 0, "max": 250000, "porcentaje": 0.06},
+    {"min": 250001, "max": 500000, "porcentaje": 0.08},
+    {"min": 500001, "max": 1000000, "porcentaje": 0.10},
+    {"min": 1000001, "max": null, "porcentaje": 0.12}
+  ]
+}
