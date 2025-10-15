@@ -2,22 +2,41 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Prueba Backend Chat</title>
+  <title>Calculadora Cashback</title>
 </head>
 <body>
-  <h1>Simulación de chat con backend</h1>
+  <h1>Simulación Chat / Calculadora Cashback</h1>
   
-  <input type="text" id="mensaje" placeholder="Escribe algo" />
-  <button onclick="enviarMensaje()">Enviar</button>
+  <input type="number" id="monto" placeholder="Monto perdido (BDT)" />
+  <button onclick="calcularCashback()">Calcular Cashback</button>
+  <button onclick="enviarMensaje()">Enviar al chat</button>
 
   <div id="chat" style="margin-top:20px;"></div>
 
   <script>
-    async function enviarMensaje() {
-      const msg = document.getElementById("mensaje").value;
-      const chatDiv = document.getElementById("chat");
+    const MAX_CASHBACK = 5000;
+    const MIN_CASHBACK = 10;
+    const PERCENT = 0.10;
 
-      chatDiv.innerHTML += `<p><b>Tú:</b> ${msg}</p>`;
+    function calcularCashback() {
+      const monto = parseFloat(document.getElementById("monto").value);
+      if (isNaN(monto) || monto <= 0) {
+        alert("Ingresa un monto válido mayor a 0");
+        return;
+      }
+
+      let cashback = monto * PERCENT;
+      if (cashback > MAX_CASHBACK) cashback = MAX_CASHBACK;
+      if (cashback < MIN_CASHBACK) cashback = MIN_CASHBACK;
+
+      const chatDiv = document.getElementById("chat");
+      chatDiv.innerHTML += `<p><b>Calculadora:</b> Tu cashback es ${cashback.toFixed(2)} BDT</p>`;
+    }
+
+    async function enviarMensaje() {
+      const monto = document.getElementById("monto").value;
+      const chatDiv = document.getElementById("chat");
+      chatDiv.innerHTML += `<p><b>Tú:</b> ${monto}</p>`;
 
       // Llamada al backend
       const response = await fetch(
@@ -25,14 +44,13 @@
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: msg })
+          body: JSON.stringify({ message: monto })
         }
       );
 
       const data = await response.json();
-
       chatDiv.innerHTML += `<p><b>Backend:</b> ${data.reply}</p>`;
-      document.getElementById("mensaje").value = "";
+      document.getElementById("monto").value = "";
     }
   </script>
 </body>
