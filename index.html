@@ -2,104 +2,101 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Calculadora Cashback</title>
+  <title>Calculadora Cashback Interactiva</title>
 </head>
 <body>
-  <h1>Simulación Chat / Calculadora Cashback</h1>
+  <h1>Simulación Chat / Cashback Interactivo</h1>
   
-  <input type="number" id="monto" placeholder="Monto perdido (BDT)" />
-
-  <!-- Botones separados por tipo -->
-  <div style="margin-top:10px;">
-    <button onclick="calcularChickenDash()">Calcular Chicken Dash (10% diario, max 5k)</button>
-    <button onclick="calcularSlots()">Calcular Slots Weekly (6-12%)</button>
-    <button onclick="enviarMensaje()">Enviar al chat</button>
-  </div>
+  <input type="text" id="mensaje" placeholder="Escribe tu mensaje aquí..." />
+  <button onclick="procesarInput()">Enviar</button>
 
   <div id="chat" style="margin-top:20px;"></div>
+  <div id="botonesPromocion" style="margin-top:10px;"></div>
 
   <script>
     const MIN_CASHBACK = 10;
+    const MAX_CASHBACK_CHICKEN = 5000;
+    const PERCENT_CHICKEN = 0.10;
+
+    let promocionSeleccionada = null;
 
     function limpiarInput() {
-      document.getElementById("monto").value = "";
+      document.getElementById("mensaje").value = "";
     }
 
-    function calcularChickenDash() {
-      const monto = parseFloat(document.getElementById("monto").value);
-      if (isNaN(monto) || monto <= 0) {
-        alert("Ingresa un monto válido mayor a 0");
-        return;
-      }
+    function mostrarBotones() {
+      const div = document.getElementById("botonesPromocion");
+      div.innerHTML = `
+        <button onclick="seleccionarPromocion('Chicken Dash')">Chicken Dash</button>
+        <button onclick="seleccionarPromocion('Slots Weekly')">Slots Weekly</button>
+      `;
+    }
 
-      const PERCENT = 0.10;
-      const MAX_CASHBACK = 5000;
-      let cashback = monto * PERCENT;
-      let mensaje = "";
-
-      if (cashback >= MAX_CASHBACK) {
-        cashback = MAX_CASHBACK;
-        mensaje = `🎉 ¡Has alcanzado el límite máximo de cashback! 
-El monto que ingresaste fue: ${monto} BDT
-Porcentaje aplicado: ${PERCENT*100}%
-Total de cashback: ${cashback.toFixed(2)} BDT`;
-      } else if (cashback < MIN_CASHBACK) {
-        cashback = MIN_CASHBACK;
-        mensaje = `⚠️ El cashback calculado es menor al mínimo permitido.
-Tu cashback será: ${cashback.toFixed(2)} BDT`;
-      } else {
-        mensaje = `El monto que ingresaste fue: ${monto} BDT
-Porcentaje aplicado: ${PERCENT*100}%
-Total de cashback: ${cashback.toFixed(2)} BDT`;
-      }
+    function seleccionarPromocion(prom) {
+      promocionSeleccionada = prom;
+      const div = document.getElementById("botonesPromocion");
+      div.innerHTML = ""; // Oculta botones
 
       const chatDiv = document.getElementById("chat");
-      chatDiv.innerHTML += `<p><b>Chicken Dash:</b> ${mensaje.replace(/\n/g,"<br>")}</p>`;
+      chatDiv.innerHTML += `<p><b>Promoción seleccionada:</b> ${prom}</p>`;
+      chatDiv.innerHTML += `<p>Coloque el monto perdido:</p>`;
       limpiarInput();
     }
 
-    function calcularSlots() {
-      const monto = parseFloat(document.getElementById("monto").value);
-      if (isNaN(monto) || monto <= 0) {
-        alert("Ingresa un monto válido mayor a 0");
+    function procesarInput() {
+      const mensaje = document.getElementById("mensaje").value.trim();
+      const chatDiv = document.getElementById("chat");
+
+      if (!mensaje) return;
+
+      chatDiv.innerHTML += `<p><b>Tú:</b> ${mensaje}</p>`;
+
+      // Paso 1: detectar si el usuario pregunta por cashback
+      if (mensaje.toLowerCase().includes("cashback") && !promocionSeleccionada) {
+        chatDiv.innerHTML += `<p>Elija su promoción:</p>`;
+        mostrarBotones();
+        limpiarInput();
         return;
       }
 
-      let porcentaje = 0;
-      if (monto <= 250000) porcentaje = 0.06;
-      else if (monto <= 500000) porcentaje = 0.08;
-      else if (monto <= 1000000) porcentaje = 0.10;
-      else porcentaje = 0.12;
-
-      let cashback = monto * porcentaje;
-      if (cashback < MIN_CASHBACK) cashback = MIN_CASHBACK;
-
-      const mensaje = `El monto que ingresaste fue: ${monto} BDT
-Porcentaje aplicado: ${porcentaje*100}%
-Total de cashback: ${cashback.toFixed(2)} BDT`;
-
-      const chatDiv = document.getElementById("chat");
-      chatDiv.innerHTML += `<p><b>Slots Weekly:</b> ${mensaje.replace(/\n/g,"<br>")}</p>`;
-      limpiarInput();
-    }
-
-    async function enviarMensaje() {
-      const monto = document.getElementById("monto").value;
-      const chatDiv = document.getElementById("chat");
-      chatDiv.innerHTML += `<p><b>Tú:</b> ${monto}</p>`;
-
-      // Llamada al backend
-      const response = await fetch(
-        `https://tidiotech.netlify.app/.netlify/functions/webhook`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: monto })
+      // Paso 2: si ya seleccionó una promoción y envía un monto
+      if (promocionSeleccionada) {
+        const monto = parseFloat(mensaje);
+        if (isNaN(monto) || monto <= 0) {
+          chatDiv.innerHTML += `<p>⚠️ Ingresa un monto válido mayor a 0</p>`;
+          limpiarInput();
+          return;
         }
-      );
 
-      const data = await response.json();
-      chatDiv.innerHTML += `<p><b>Backend:</b> ${data.reply}</p>`;
+        let reply = "";
+        if (promocionSeleccionada === "Chicken Dash") {
+          let cashback = monto * PERCENT_CHICKEN;
+          if (cashback >= MAX_CASHBACK_CHICKEN) cashback = MAX_CASHBACK_CHICKEN;
+          if (cashback < MIN_CASHBACK) cashback = MIN_CASHBACK;
+
+          reply = `🎉 Chicken Dash\nMonto ingresado: ${monto} BDT\nPorcentaje aplicado: ${PERCENT_CHICKEN*100}%\nTotal cashback: ${cashback.toFixed(2)} BDT`;
+
+        } else if (promocionSeleccionada === "Slots Weekly") {
+          let porcentaje = 0;
+          if (monto <= 250000) porcentaje = 0.06;
+          else if (monto <= 500000) porcentaje = 0.08;
+          else if (monto <= 1000000) porcentaje = 0.10;
+          else porcentaje = 0.12;
+
+          let cashback = monto * porcentaje;
+          if (cashback < MIN_CASHBACK) cashback = MIN_CASHBACK;
+
+          reply = `🎰 Slots Weekly\nMonto ingresado: ${monto} BDT\nPorcentaje aplicado: ${porcentaje*100}%\nTotal cashback: ${cashback.toFixed(2)} BDT`;
+        }
+
+        chatDiv.innerHTML += `<p><b>Calculadora:</b><br>${reply.replace(/\n/g,"<br>")}</p>`;
+        promocionSeleccionada = null; // reset para nuevo flujo
+        limpiarInput();
+        return;
+      }
+
+      // Paso 3: si el mensaje no coincide con nada
+      chatDiv.innerHTML += `<p><b>Bot:</b> No entiendo tu mensaje aún.</p>`;
       limpiarInput();
     }
   </script>
