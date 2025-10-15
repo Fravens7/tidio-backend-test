@@ -2,101 +2,120 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Calculadora Cashback Interactiva</title>
+  <title>Cashback Input Flow</title>
+  <style>
+    #chatSystem {
+      display: inline-block;
+      margin-left: 10px;
+      font-weight: bold;
+      color: blue;
+    }
+    #container {
+      display: flex;
+      align-items: center;
+      margin-top: 20px;
+    }
+    input {
+      width: 200px;
+      padding: 5px;
+    }
+    button {
+      padding: 5px 10px;
+      margin-left: 5px;
+    }
+  </style>
 </head>
 <body>
-  <h1>Simulación Chat / Cashback Interactivo</h1>
-  
-  <input type="text" id="mensaje" placeholder="Escribe tu mensaje aquí..." />
-  <button onclick="procesarInput()">Enviar</button>
+  <h2>Simulación Cashback con un solo Input</h2>
 
-  <div id="chat" style="margin-top:20px;"></div>
-  <div id="botonesPromocion" style="margin-top:10px;"></div>
+  <div id="container">
+    <input type="text" id="mensaje" placeholder="Escribe tu mensaje aquí..." />
+    <button onclick="procesarInput()">Enviar</button>
+    <span id="chatSystem">Escribe tu mensaje</span>
+  </div>
+
+  <div id="chatLog" style="margin-top:20px;"></div>
 
   <script>
+    let estado = "inicio"; // inicio, esperandoPromocion, esperandoMonto
+    let promocionSeleccionada = null;
+
     const MIN_CASHBACK = 10;
     const MAX_CASHBACK_CHICKEN = 5000;
     const PERCENT_CHICKEN = 0.10;
-
-    let promocionSeleccionada = null;
 
     function limpiarInput() {
       document.getElementById("mensaje").value = "";
     }
 
-    function mostrarBotones() {
-      const div = document.getElementById("botonesPromocion");
-      div.innerHTML = `
-        <button onclick="seleccionarPromocion('Chicken Dash')">Chicken Dash</button>
-        <button onclick="seleccionarPromocion('Slots Weekly')">Slots Weekly</button>
-      `;
-    }
-
-    function seleccionarPromocion(prom) {
-      promocionSeleccionada = prom;
-      const div = document.getElementById("botonesPromocion");
-      div.innerHTML = ""; // Oculta botones
-
-      const chatDiv = document.getElementById("chat");
-      chatDiv.innerHTML += `<p><b>Promoción seleccionada:</b> ${prom}</p>`;
-      chatDiv.innerHTML += `<p>Coloque el monto perdido:</p>`;
-      limpiarInput();
+    function actualizarSistema(texto) {
+      document.getElementById("chatSystem").textContent = texto;
     }
 
     function procesarInput() {
-      const mensaje = document.getElementById("mensaje").value.trim();
-      const chatDiv = document.getElementById("chat");
+      const input = document.getElementById("mensaje").value.trim();
+      if (!input) return;
 
-      if (!mensaje) return;
+      const chatLog = document.getElementById("chatLog");
+      chatLog.innerHTML += `<p><b>Tú:</b> ${input}</p>`;
 
-      chatDiv.innerHTML += `<p><b>Tú:</b> ${mensaje}</p>`;
+      switch(estado) {
+        case "inicio":
+          if (input.toLowerCase().includes("cashback")) {
+            actualizarSistema("Qué promoción quieres, Slots o Chicken Dash?");
+            estado = "esperandoPromocion";
+          } else {
+            actualizarSistema("No entiendo tu mensaje aún.");
+          }
+          break;
 
-      // Paso 1: detectar si el usuario pregunta por cashback
-      if (mensaje.toLowerCase().includes("cashback") && !promocionSeleccionada) {
-        chatDiv.innerHTML += `<p>Elija su promoción:</p>`;
-        mostrarBotones();
-        limpiarInput();
-        return;
+        case "esperandoPromocion":
+          if (input.toLowerCase() === "slots" || input.toLowerCase() === "chicken dash") {
+            promocionSeleccionada = input.toLowerCase();
+            actualizarSistema("Coloque el monto perdido:");
+            estado = "esperandoMonto";
+          } else {
+            actualizarSistema("Por favor, escribe 'Slots' o 'Chicken Dash'");
+          }
+          break;
+
+        case "esperandoMonto":
+          const monto = parseFloat(input);
+          if (isNaN(monto) || monto <= 0) {
+            actualizarSistema("Ingresa un monto válido mayor a 0");
+            break;
+          }
+
+          let reply = "";
+          if (promocionSeleccionada === "chicken dash") {
+            let cashback = monto * PERCENT_CHICKEN;
+            if (cashback >= MAX_CASHBACK_CHICKEN) cashback = MAX_CASHBACK_CHICKEN;
+            if (cashback < MIN_CASHBACK) cashback = MIN_CASHBACK;
+
+            reply = `🎉 Chicken Dash\nMonto ingresado: ${monto} BDT\nPorcentaje aplicado: ${PERCENT_CHICKEN*100}%\nTotal cashback: ${cashback.toFixed(2)} BDT`;
+          } else if (promocionSeleccionada === "slots") {
+            let porcentaje = 0;
+            if (monto <= 250000) porcentaje = 0.06;
+            else if (monto <= 500000) porcentaje = 0.08;
+            else if (monto <= 1000000) porcentaje = 0.10;
+            else porcentaje = 0.12;
+
+            let cashback = monto * porcentaje;
+            if (cashback < MIN_CASHBACK) cashback = MIN_CASHBACK;
+
+            reply = `🎰 Slots Weekly\nMonto ingresado: ${monto} BDT\nPorcentaje aplicado: ${porcentaje*100}%\nTotal cashback: ${cashback.toFixed(2)} BDT`;
+          }
+
+          chatLog.innerHTML += `<p><b>Calculadora:</b><br>${reply.replace(/\n/g,"<br>")}</p>`;
+          actualizarSistema("Escribe tu mensaje"); // reinicia instrucciones
+          promocionSeleccionada = null;
+          estado = "inicio";
+          break;
+
+        default:
+          actualizarSistema("No entiendo tu mensaje aún.");
       }
 
-      // Paso 2: si ya seleccionó una promoción y envía un monto
-      if (promocionSeleccionada) {
-        const monto = parseFloat(mensaje);
-        if (isNaN(monto) || monto <= 0) {
-          chatDiv.innerHTML += `<p>⚠️ Ingresa un monto válido mayor a 0</p>`;
-          limpiarInput();
-          return;
-        }
-
-        let reply = "";
-        if (promocionSeleccionada === "Chicken Dash") {
-          let cashback = monto * PERCENT_CHICKEN;
-          if (cashback >= MAX_CASHBACK_CHICKEN) cashback = MAX_CASHBACK_CHICKEN;
-          if (cashback < MIN_CASHBACK) cashback = MIN_CASHBACK;
-
-          reply = `🎉 Chicken Dash\nMonto ingresado: ${monto} BDT\nPorcentaje aplicado: ${PERCENT_CHICKEN*100}%\nTotal cashback: ${cashback.toFixed(2)} BDT`;
-
-        } else if (promocionSeleccionada === "Slots Weekly") {
-          let porcentaje = 0;
-          if (monto <= 250000) porcentaje = 0.06;
-          else if (monto <= 500000) porcentaje = 0.08;
-          else if (monto <= 1000000) porcentaje = 0.10;
-          else porcentaje = 0.12;
-
-          let cashback = monto * porcentaje;
-          if (cashback < MIN_CASHBACK) cashback = MIN_CASHBACK;
-
-          reply = `🎰 Slots Weekly\nMonto ingresado: ${monto} BDT\nPorcentaje aplicado: ${porcentaje*100}%\nTotal cashback: ${cashback.toFixed(2)} BDT`;
-        }
-
-        chatDiv.innerHTML += `<p><b>Calculadora:</b><br>${reply.replace(/\n/g,"<br>")}</p>`;
-        promocionSeleccionada = null; // reset para nuevo flujo
-        limpiarInput();
-        return;
-      }
-
-      // Paso 3: si el mensaje no coincide con nada
-      chatDiv.innerHTML += `<p><b>Bot:</b> No entiendo tu mensaje aún.</p>`;
       limpiarInput();
     }
   </script>
